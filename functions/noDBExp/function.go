@@ -1,7 +1,7 @@
 package noDBExp
 
 import (
-	"diploma/pkg/mytest"
+	"github.com/makuc/diploma/pkg/mytest"
 	"net/http"
 )
 
