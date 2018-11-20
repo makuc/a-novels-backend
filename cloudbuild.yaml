@@ -1,0 +1,4 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['alpha', 'functions', 'deploy', '${_PREFIX}-func1', '--trigger-http', '--entry-point', 'BrezBaze', '--runtime', 'go111']
+  dir: 'functions/noDBExp'
