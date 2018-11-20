@@ -1,4 +1,13 @@
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
-  args: ['alpha', 'functions', 'deploy', '${_PREFIX}-func1', '--trigger-http', '--entry-point', 'BrezBaze', '--runtime', 'go111']
+  args:
+  - alpha
+  - functions
+  - deploy
+  - ${_PREFIX}-func1
+  - --trigger-http
+  - --entry-point=BrezBaze
+  - --runtime=go111
+  - --memory=128MB
+  - --source=${_REPO}
   dir: 'functions/noDBExp'
