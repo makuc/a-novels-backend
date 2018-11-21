@@ -2,14 +2,13 @@
 	encrypt copy clean
 
 # Config:
-
 KeyRingName = "github-keyring"
 CryptoKeyName = "github-token"
 
 # END Config
 
-cfile:
-	@echo "https://PersonalAccessToken:<AccessToken>@github.com/" > git-credentials
+sample:
+	@echo OverwriteWithAccessToken> ${CryptoKeyName}
 
 newkeyring:
 	gcloud kms keyrings create ${KeyRingName} --location=global
@@ -17,20 +16,23 @@ newkeyring:
 newkey:
 	gcloud kms keys create ${CryptoKeyName} --location=global --keyring=${KeyRingName} --purpose=encryption
 
-genssh:
-	ssh-keygen -t rsa -b 4096 -C ${email} -f ./id_rsa -N ""
-
 encrypt:
-	gcloud kms encrypt --plaintext-file=./git-credentials \
-    --ciphertext-file=./git-credentials.enc \
+	gcloud kms encrypt --plaintext-file=./${CryptoKeyName} \
+    --ciphertext-file=./${CryptoKeyName}.enc \
     --location=global --keyring=${KeyRingName} --key=${CryptoKeyName}
 
-knownhosts:
-	ssh-keyscan -t rsa github.com > known_hosts
-
 copy:
-	cp -f git-credentials.enc ../git-credentials.enc
+	cp -f ${CryptoKeyName}.enc ../${CryptoKeyName}.enc
 
 clean:
-	rm -f git-credentials.enc
-#	rm -f git-credentials
+	rm -f ${CryptoKeyName}.enc
+	rm -f ${CryptoKeyName}
+
+
+secretenv:
+	gcloud kms encrypt \
+      --plaintext-file=${CryptoKeyName} \
+      --ciphertext-file=- \
+      --location=global \
+      --keyring=${KeyRingName} \
+      --key=${CryptoKeyName} | base64> encoded

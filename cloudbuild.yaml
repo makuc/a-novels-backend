@@ -1,41 +1,40 @@
+secrets:
+- kmsKeyName: projects/testing-192515/locations/global/keyRings/github-keyring/cryptoKeys/github-token
+  secretEnv:
+    GITHUB: "CiQATCXijGvPYgD6XbdCVmveArTSLWJufuN9ys3x8XnUJ3KQj6YSUQDGtndZRHWKMteIIAmcaqCW
+             DTKEiOqEpttsmEsTYpbeXLD7GTSV7gehKUeH1ukm8S+ecBICeASkdbkLJQy1hE+Ue8uaLpFYv29c
+             v8vT+4A9QA=="
+
 steps:
-# Decrypt the file containing the access token
-- name: 'gcr.io/cloud-builders/gcloud'
+# Playing with GO
+- name: 'gcr.io/cloud-builders/go'
+  entrypoint: 'ash' # because this is alpine
   args:
-  - kms
-  - decrypt
-  - --ciphertext-file=git-credentials.enc
-  - --plaintext-file=/root/.git-credentials
-  - --location=global
-  - --keyring=github-keyring
-  - --key=github-token
-  volumes:
-  - name: 'git-access'
-    path: /root
-
-# Set up git with key and domain.
-- name: 'gcr.io/cloud-builders/git'
-  entrypoint: 'bash'
-  args:
-  - '-c'
+  - -c
   - |
-    git config --global user.email "armin.makovec@hotmail.com"
-    git config --global user.name "Armin Makovec"
-    git config --global credential.helper store --store=/root/git-credentials
-    git clone https://makuc:5612ec3ddb444beabedee0444b251f0a4e9fac45@github.com/makuc/diploma.git
-    rm -fr diploma
-  volumes:
-  - name: 'git-access'
-    path: /root
-
-# Test Credentials by Cloning a Repo
-- name: 'gcr.io/cloud-builders/git'
-  args:
-  - clone
-  - https://github.com/makuc/diploma.git
-  volumes:
-  - name: 'git-access'
-    path: /root
+    echo $$GITHUB
+    #${_PREFIX}
+    
+    # Here were configure ACCESS to our private GIT repository
+    mkdir tmp_cloning_dir
+    cd tmp_cloning_dir
+    git config --global credential.helper 'cache --timeout 300'
+    git clone --depth=1 https://$$GITHUB:x-oauth-basic@github.com/makuc/diploma.git
+    cd ..
+    rm -fr tmp_cloning_dir
+    
+    # Now we vendor all the functions
+    for d in */ ; do
+      cd $d
+      go mod tidy
+      go mod vendor
+      rm -f go.mod
+      rm -f go.sum
+      cd ..
+    done
+    # With this we are ready to deploy them!
+  secretEnv: ['GITHUB']
+  dir: 'functions'
 
 - name: 'gcr.io/cloud-builders/gcloud'
   args:
@@ -47,8 +46,4 @@ steps:
   - --entry-point=BrezBaze
   - --runtime=go111
   - --memory=128MB
-#  - --source=${_REPO}
   dir: 'functions/noDBExp'
-  volumes:
-  - name: 'git-access'
-    path: /root

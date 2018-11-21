@@ -13,5 +13,8 @@
 
 # IDE workspace DIR
 .idea/
+
+# Preparatory files for Private Git Access
 functions/*/bin
-prep/git-credentials
+prep/*
+!prep/Makefile

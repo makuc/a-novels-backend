@@ -2,11 +2,12 @@
 
 # Config
 prefix = "test"
-repo = "https://source.developers.google.com/projects/testing-192515/repos/diplomska-naloga"
-#repo = .
+
+#repo = "https://source.developers.google.com/projects/testing-192515/repos/diplomska-naloga"
 
 
-# No more editing from here
+# END Config
+
 # Checks if you are deploying source from Repository or Local Filesystem.
 ifeq (${repo}, .)
 	source = .
@@ -16,7 +17,6 @@ endif
 
 # Calling this deploys all function to the Google Cloud Functions
 deploy:
-#	gcloud builds submit --config cloudbuild.yaml --substitutions=_PREFIX=${prefix},_REPO=${repo} ${source}
 	gcloud builds submit --config cloudbuild.yaml --substitutions=_PREFIX=${prefix} .
 
 # Calling this deletes all functions from the Google Cloud Functions
