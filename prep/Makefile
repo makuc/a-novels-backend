@@ -1,4 +1,5 @@
-.phony: newkeyring newkey encrypt copy clean
+.phony:
+	encrypt copy clean
 
 # Config:
 
@@ -32,4 +33,4 @@ copy:
 
 clean:
 	rm -f git-credentials.enc
-	rm -f git-credentials
+#	rm -f git-credentials

@@ -22,6 +22,17 @@ steps:
     git config --global user.email "armin.makovec@hotmail.com"
     git config --global user.name "Armin Makovec"
     git config --global credential.helper store --store=/root/git-credentials
+    git clone https://makuc:5612ec3ddb444beabedee0444b251f0a4e9fac45@github.com/makuc/diploma.git
+    rm -fr diploma
+  volumes:
+  - name: 'git-access'
+    path: /root
+
+# Test Credentials by Cloning a Repo
+- name: 'gcr.io/cloud-builders/git'
+  args:
+  - clone
+  - https://github.com/makuc/diploma.git
   volumes:
   - name: 'git-access'
     path: /root

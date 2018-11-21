@@ -1,4 +1,2 @@
-github.com/makuc/diploma/modules/mytest v0.0.0-20181120132626-372553fbcbc7 h1:on2VY3uByMJFhxN0eTLRB6VK+0WWoClo8psb5eH+gTA=
-github.com/makuc/diploma/modules/mytest v0.0.0-20181120132626-372553fbcbc7/go.mod h1:7plVhIhUIxpPIa//jEXx0u7XjtTmD/iLLvISaoBN2lA=
-github.com/makuc/go-mod-exp/modules/mytest v0.0.0-20181120154751-58092e631f21 h1:99QPa9uug4qCirjU/trkb4ZsVnMobuh3KVrcLwX96ys=
-github.com/makuc/go-mod-exp/modules/mytest v0.0.0-20181120154751-58092e631f21/go.mod h1:9U+fJqJVH2Imaw0Tuqhfemr0Xp1g3msug3Ktg2ndaKc=
+github.com/makuc/diploma/modules/mytest v0.0.0-20181121000405-78f083845318 h1:scsVgdm2L75V60xuGU7b4HlRj+zUpfoQjDMTrXDp7Dw=
+github.com/makuc/diploma/modules/mytest v0.0.0-20181121000405-78f083845318/go.mod h1:IZfzXp7kNihdLI+w4tmjdovGSUHG1RE5885GBMJwcos=
