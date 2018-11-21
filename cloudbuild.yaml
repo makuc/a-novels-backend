@@ -4,7 +4,7 @@ steps:
   args:
   - kms
   - decrypt
-  - --ciphertext-file=git-access-token.enc
+  - --ciphertext-file=git-credentials.enc
   - --plaintext-file=/root/.git-credentials
   - --location=global
   - --keyring=github-keyring
