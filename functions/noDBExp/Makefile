@@ -1,23 +1,14 @@
-#.PHONY: clean deploy
-.PHONY: deps clean
+.PHONY: clean build
 
-deps:
-	#go get -u ./...
 
 clean:
 	rm -rf bin
 
-#build:
-	#dep ensure
-	#env GOOS=linux GOARCH=amd64 go build -o bin/employees ./functions/employees
+build:
+	env GOOS=linux GOARCH=amd64 go build -o bin/noDBExp
 
 test:
 	go test .
 
 deploy:
-	gcloud alpha functions deploy noDBExp \
-	  --entry-point BrezBaze \
-	  --memory 128MB \
-	  --region us-central1 \
-	  --runtime go111 \
-	  --trigger-http
+	gcloud alpha functions deploy testiram --trigger-http --entry-point=BrezBaze --runtime=go111 --memory=128MB

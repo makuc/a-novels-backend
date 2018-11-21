@@ -2,8 +2,8 @@
 
 # Config
 prefix = "test"
-#repo = "https://source.cloud.google.com/testing-192515/diplomska-naloga"
-repo = .
+repo = "https://source.developers.google.com/projects/testing-192515/repos/diplomska-naloga"
+#repo = .
 
 
 # No more editing from here
@@ -16,7 +16,8 @@ endif
 
 # Calling this deploys all function to the Google Cloud Functions
 deploy:
-	gcloud builds submit --config cloudbuild.yaml --substitutions=_PREFIX=${prefix},_REPO=${repo} ${source}
+#	gcloud builds submit --config cloudbuild.yaml --substitutions=_PREFIX=${prefix},_REPO=${repo} ${source}
+	gcloud builds submit --config cloudbuild.yaml --substitutions=_PREFIX=${prefix} .
 
 # Calling this deletes all functions from the Google Cloud Functions
 delete:

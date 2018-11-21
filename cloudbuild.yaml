@@ -1,4 +1,31 @@
 steps:
+# Decrypt the file containing the access token
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - kms
+  - decrypt
+  - --ciphertext-file=git-access-token.enc
+  - --plaintext-file=/root/.git-credentials
+  - --location=global
+  - --keyring=github-keyring
+  - --key=github-token
+  volumes:
+  - name: 'git-access'
+    path: /root
+
+# Set up git with key and domain.
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    git config --global user.email "armin.makovec@hotmail.com"
+    git config --global user.name "Armin Makovec"
+    git config --global credential.helper store --store=/root/git-credentials
+  volumes:
+  - name: 'git-access'
+    path: /root
+
 - name: 'gcr.io/cloud-builders/gcloud'
   args:
   - alpha
@@ -9,5 +36,8 @@ steps:
   - --entry-point=BrezBaze
   - --runtime=go111
   - --memory=128MB
-  - --source=${_REPO}
+#  - --source=${_REPO}
   dir: 'functions/noDBExp'
+  volumes:
+  - name: 'git-access'
+    path: /root
