@@ -1,5 +1,5 @@
 .phony:
-	encrypt copy clean
+	encrypt secretenv
 
 # Config:
 KeyRingName = "github-keyring"
@@ -29,6 +29,7 @@ clean:
 	rm -f ${CryptoKeyName}
 
 
+# Standalone - The only one needed for Secret Env !!ss
 secretenv:
 	gcloud kms encrypt \
       --plaintext-file=${CryptoKeyName} \

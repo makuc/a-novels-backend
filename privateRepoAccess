@@ -1,0 +1,3 @@
+#!/bin/ash
+
+git config --global url."https://$GITHUB:x-oauth-basic@github.com/makuc/".insteadOf "https://github.com/makuc"
