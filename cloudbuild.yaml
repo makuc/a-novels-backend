@@ -7,7 +7,6 @@ secrets:
 
 steps:
 # Playing with GO
-# Playing with GO
 - name: 'gcr.io/cloud-builders/go'
   entrypoint: 'ash' # because this is alpine
   args:
