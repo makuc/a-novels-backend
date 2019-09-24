@@ -1,22 +1,24 @@
-package onNovelCoverUpload
+package onnovelcoverdelete
 
 import (
-	"cloud.google.com/go/firestore"
-	"cloud.google.com/go/functions/metadata"
-	vision "cloud.google.com/go/vision/apiv1"
 	"context"
-	firebase "firebase.google.com/go"
-	"cloud.google.com/go/storage"
 	"fmt"
 	"log"
 	"os"
 	"time"
+
+	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/functions/metadata"
+	"cloud.google.com/go/storage"
+	vision "cloud.google.com/go/vision/apiv1"
+	firebase "firebase.google.com/go"
+	"google.golang.org/api/option"
 )
 
 var (
-	app *firebase.App
+	app             *firebase.App
 	firestoreClient *firestore.Client
-	bucket *storage.BucketHandle
+	bucket          *storage.BucketHandle
 
 	visionClient *vision.ImageAnnotatorClient
 )
@@ -32,6 +34,7 @@ type GCSEvent struct {
 }
 
 func init() {
+	ctx := context.Background()
 	// Declare a separate err variable to avoid shadowing the client variables.
 	var err error
 
@@ -40,25 +43,33 @@ func init() {
 		projectID = "testing-192515"
 	}
 
+	// Initialize the app with a custom auth variable, limiting the server's access
+	ao := map[string]interface{}{
+		"uid": "my-service-worker",
+	}
 	conf := &firebase.Config{
-		ProjectID: projectID,
+		ProjectID:     projectID,
 		StorageBucket: fmt.Sprintf("%s.appspot.com", projectID),
+		AuthOverride:  &ao,
 	}
 
+	// Fetch the service account key JSON file contents
+	opt := option.WithCredentialsFile("firebase-adminsdk-testing-192515.json")
+
 	// Initialize default app
-	app, err := firebase.NewApp(context.Background(), conf)
+	app, err := firebase.NewApp(ctx, conf, opt)
 	if err != nil {
 		log.Fatalf("firebase.NewApp: %v\n", err)
 	}
 
 	// Access firestore service from the default app
-	firestoreClient, err = app.Firestore(context.Background())
+	firestoreClient, err = app.Firestore(ctx)
 	if err != nil {
 		log.Fatalf("app.Firestore: %v", err)
 	}
 
 	// Access storage services from the default app
-	storageClient, err := app.Storage(context.Background())
+	storageClient, err := app.Storage(ctx)
 	if err != nil {
 		log.Fatalf("app.Storage: %v", err)
 	}
@@ -69,6 +80,8 @@ func init() {
 	}
 }
 
+// OnNovelCoverDelete is a function executing upon deleting cover of a novel.
+// usage: when a cover is deleted, updates novel to match the change
 func OnNovelCoverDelete(ctx context.Context, e GCSEvent) error {
 	_, err := metadata.FromContext(ctx) // Change _ => meta
 	if err != nil {
@@ -82,16 +95,16 @@ func OnNovelCoverDelete(ctx context.Context, e GCSEvent) error {
 			// This file is deleted, so we can properly remove `cover` from novel
 			setNovelNoCover(ctx, e.Name[7:27])
 			return nil
-		} else {
-			log.Fatalf("obj.Attrs: %v", err, e.Name[7:27])
 		}
+
+		log.Fatalf("obj.Attrs: %v", err)
 	}
 
 	return nil
 }
 
-func setNovelNoCover(ctx context.Context, novelId string) {
-	_, err := firestoreClient.Collection("novels").Doc(novelId).Set(ctx, map[string]interface{}{
+func setNovelNoCover(ctx context.Context, novelID string) {
+	_, err := firestoreClient.Collection("novels").Doc(novelID).Set(ctx, map[string]interface{}{
 		"cover": false,
 	}, firestore.MergeAll)
 

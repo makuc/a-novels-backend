@@ -1,23 +1,24 @@
-package onNovelCoverUpload
+package onnovelcoverupload
 
 import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/functions/metadata"
 	"cloud.google.com/go/storage"
 	vision "cloud.google.com/go/vision/apiv1"
-	"context"
 	firebase "firebase.google.com/go"
-	"fmt"
 	"google.golang.org/api/option"
-	"log"
-	"os"
-	"time"
 )
 
 var (
-	app *firebase.App
+	app             *firebase.App
 	firestoreClient *firestore.Client
-	bucket *storage.BucketHandle
+	bucket          *storage.BucketHandle
 
 	visionClient *vision.ImageAnnotatorClient
 )
@@ -45,9 +46,9 @@ func init() {
 		"uid": "my-service-worker",
 	}
 	conf := &firebase.Config{
-		ProjectID: projectID,
+		ProjectID:     projectID,
 		StorageBucket: fmt.Sprintf("%s.appspot.com", projectID),
-		AuthOverride: &ao,
+		AuthOverride:  &ao,
 	}
 
 	// Fetch the service account key JSON file contents
@@ -66,6 +67,8 @@ func init() {
 	}
 }
 
+// OnNovelCoverUpload is a function executing upon uploading a new cover.
+// usage: when a new cover is uploaded, updates novel to match the change
 func OnNovelCoverUpload(ctx context.Context, e GCSEvent) error {
 	_, err := metadata.FromContext(ctx) // Change _ => meta
 	if err != nil {
@@ -77,8 +80,8 @@ func OnNovelCoverUpload(ctx context.Context, e GCSEvent) error {
 	return nil
 }
 
-func setNovelHasCover(ctx context.Context, novelId string) {
-	_, err := firestoreClient.Collection("novels").Doc(novelId).Set(ctx, map[string]interface{}{
+func setNovelHasCover(ctx context.Context, novelID string) {
+	_, err := firestoreClient.Collection("novels").Doc(novelID).Set(ctx, map[string]interface{}{
 		"cover": true,
 	}, firestore.MergeAll)
 
