@@ -1,4 +1,4 @@
-module github.com/makuc/diploma/functions/on-user-create
+module github.com/makuc/a-novels-backend/functions/users/delete
 
 go 1.12
 

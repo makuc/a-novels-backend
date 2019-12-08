@@ -1,4 +1,4 @@
-package onNovelCreate
+package onnovelcreate
 
 import (
 	"cloud.google.com/go/firestore"

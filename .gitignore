@@ -13,6 +13,7 @@
 
 # IDE workspace DIR
 .idea/
+.vscode/
 
 # Preparatory files for Private Git Access
 functions/*/bin

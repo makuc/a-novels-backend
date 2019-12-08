@@ -1,4 +1,4 @@
-module github.com/makuc/diploma/functions/on-novel-create
+module github.com/makuc/diploma/functions/on-file-upload
 
 go 1.12
 

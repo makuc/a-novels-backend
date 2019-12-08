@@ -1,4 +1,4 @@
-package onUserCreate
+package delete
 
 import (
 	"cloud.google.com/go/firestore"

@@ -1,1 +1,1 @@
-module github.com/makuc/diploma/modules/mytest
+module github.com/makuc/a-novels-backend/pkg/mytest
