@@ -1,16 +1,18 @@
 package update
 
 import (
+	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/functions/metadata"
 	"context"
+	"errors"
+	firebase "firebase.google.com/go"
+	"google.golang.org/api/iterator"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"log"
 	"os"
+	"strconv"
 	"time"
-
-	"cloud.google.com/go/firestore"
-	firebase "firebase.google.com/go"
-	"github.com/makuc/a-novels-backend/pkg/gcp"
-	"github.com/makuc/a-novels-backend/pkg/idempotent"
-	"google.golang.org/api/iterator"
 )
 
 var (
@@ -22,7 +24,7 @@ type FirestoreEvent struct {
 	// OldValue   		UnknownValues	`json:"oldValue"`
 	OldValue   FirestoreValue `json:"oldValue"`
 	Value      FirestoreValue `firestore:"value"`
-	UpdateMask gcp.FieldPaths `firestore:"updateMask"`
+	UpdateMask FieldPaths     `firestore:"updateMask"`
 }
 
 // FirestoreValue holds Firestore fields.
@@ -36,13 +38,43 @@ type FirestoreValue struct {
 
 // UserProfile is a struct containing field for UserProfile
 type UserProfile struct {
-	UID         gcp.StringValue `json:"uid"`
-	DisplayName gcp.StringValue `json:"displayName"`
-	Email       gcp.StringValue `json:"email"`
+	UID         StringValue `json:"uid"`
+	DisplayName StringValue `json:"displayName"`
+	Email       StringValue `json:"email"`
 	//EmailVerified
-	PhoneNumber gcp.StringValue    `json:"phoneNumber"`
-	PhotoURL    gcp.StringValue    `json:"photoURL"`
-	CreatedAt   gcp.TimestampValue `json:"createdAt"`
+	PhoneNumber StringValue    `json:"phoneNumber"`
+	PhotoURL    StringValue    `json:"photoURL"`
+	CreatedAt   TimestampValue `json:"createdAt"`
+}
+
+// UnknownValues is a helper type for figuring out structure of parsed data (by logging it)
+type UnknownValues struct {
+	Fields map[string]interface{} `json:"fields"`
+}
+
+// FieldPaths is a type for parsing `fieldPaths` data from Firestore Events
+type FieldPaths struct {
+	FieldPaths []string `json:"fieldPaths"`
+}
+
+// StringValue is a type for parsing `string` type from Firestore Events
+type StringValue struct {
+	StringValue string `json:"stringValue"`
+}
+
+// IntegerValue is a type for parsing `integer` type from Firestore Events
+type IntegerValue struct {
+	IntegerValue int64 `json:"integerValue"`
+}
+
+// TimestampValue is a type for parsing `Timestamp` type from Firestore Events
+type TimestampValue struct {
+	TimestampValue time.Time `json:"timestampValue"`
+}
+
+// BooleanValue is a type for parsing `boolean` type from Firestore Events
+type BooleanValue struct {
+	BooleanValue bool `json:"booleanValue"`
 }
 
 func init() {
@@ -50,7 +82,7 @@ func init() {
 
 	projectID, ok := os.LookupEnv("GPC_PROJECT")
 	if !ok {
-		log.Fatalf("missing ENV configuration for google cloud project: GCP_PROJECT")
+		projectID = "testing-192515"
 	}
 
 	// Initialize the app with a custom auth variable, limiting the server's access
@@ -81,7 +113,7 @@ func init() {
 func OnUserUpdate(ctx context.Context, e FirestoreEvent) error {
 	// log.Printf("Function triggered by change to: %v", meta.Resource)
 
-	proceed, err := idempotent.ExecuteWithLease(ctx)
+	proceed, err := ExecuteWithLease(ctx)
 	if err != nil {
 		log.Printf("ExecuteWithLease: %v", err.Error())
 		return err
@@ -91,26 +123,26 @@ func OnUserUpdate(ctx context.Context, e FirestoreEvent) error {
 	}
 
 	// Continue with execution
-	if e.OldValue.Fields.DisplayName.Value != e.Value.Fields.DisplayName.Value {
+	if e.OldValue.Fields.DisplayName.StringValue != e.Value.Fields.DisplayName.StringValue {
 		// Display name has been changed! Now do the correct adjustments!
-		err := changeNovelAuthor(ctx, e.Value.Fields.UID.Value, e.Value.Fields.DisplayName.Value)
+		err := changeNovelAuthor(ctx, e.Value.Fields.UID.StringValue, e.Value.Fields.DisplayName.StringValue)
 		if err != nil {
 			log.Printf("changeNovelsAuthor: %v", err.Error())
 			return err
 		}
 
-		err = changeReviewsAuthor(ctx, e.Value.Fields.UID.Value, e.Value.Fields.DisplayName.Value)
+		err = changeReviewsAuthor(ctx, e.Value.Fields.UID.StringValue, e.Value.Fields.DisplayName.StringValue)
 		if err != nil {
 			log.Printf("changeReviewsAuthor: %v", err.Error())
 			return err
 		}
 	}
 
-	return idempotent.ExecuteMarkComplete(ctx)
+	return ExecuteMarkComplete(ctx)
 }
 
 func changeNovelAuthor(ctx context.Context, uid string, name string) error {
-	progressRef, err := idempotent.GetExecuteProgressRef(ctx)
+	progressRef, err := GetExecuteProgressRef(ctx)
 	if err != nil {
 		return err
 	}
@@ -210,7 +242,7 @@ func changeNovelAuthor(ctx context.Context, uid string, name string) error {
 }
 
 func changeReviewsAuthor(ctx context.Context, uid string, name string) error {
-	progressRef, err := idempotent.GetExecuteProgressRef(ctx)
+	progressRef, err := GetExecuteProgressRef(ctx)
 	if err != nil {
 		return err
 	}
@@ -307,4 +339,119 @@ func changeReviewsAuthor(ctx context.Context, uid string, name string) error {
 		_, err := batch.Commit(ctx)
 		return err
 	}
+}
+
+// ExecuteWithLease tracks indempotence of the function based on the EventID specified in context metadata.
+func ExecuteWithLease(ctx context.Context) (bool, error) {
+	proceed := true
+
+	meta, err := metadata.FromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	ref := client.Collection("user-events").Doc(meta.EventID)
+	err = client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		doc, err := tx.Get(ref)
+		if err != nil && grpc.Code(err) != codes.NotFound {
+			log.Printf("error getting ID doc: %v", err)
+			return err
+		}
+		if doc.Exists() {
+			if doc.Data()["done"].(bool) { // Since this Event was already processed, just exit
+				proceed = false
+				return nil
+			}
+			getLease, err := doc.DataAt("lease")
+			if err != nil {
+				return err
+			}
+			if val, ok := getLease.(time.Time); ok && time.Now().Before(val) {
+				return errors.New("occupied, try later")
+			}
+		}
+		leaseSecondsRaw, ok := os.LookupEnv("leaseSeconds")
+		if !ok {
+			leaseSecondsRaw = "60" // Default value, just in case
+			log.Print("check env: leaseSeconds, using default: 60")
+		}
+		leaseSeconds, err := strconv.ParseInt(leaseSecondsRaw, 10, 32)
+		if err != nil {
+			return err
+		}
+
+		newValue := map[string]interface{}{
+			"lease":     time.Now().Add(time.Second * time.Duration(leaseSeconds)),
+			"updatedAt": time.Now(),
+		}
+		_, err = doc.DataAt("createdAt")
+		if err != nil {
+			if grpc.Code(err) == codes.NotFound {
+				newValue["createdAt"] = time.Now()
+			} else {
+				log.Printf("can't get field `createdAt`: %v", err.Error())
+				return err
+			}
+		}
+
+		proceed = true
+		return tx.Set(ref, newValue, firestore.MergeAll)
+	})
+	if err != nil {
+		return false, err
+	}
+	return proceed, nil
+}
+
+// ExecuteMarkCompleteTransaction marks indempotent function as complete based
+// on EventID specified in context metadata
+func ExecuteMarkCompleteTransaction(ctx context.Context, tx *firestore.Transaction) error {
+	ref, err := GetExecuteProgressRef(ctx)
+	if err != nil {
+		return err
+	}
+	return tx.Set(ref, map[string]interface{}{
+		"done":      true,
+		"updatedAt": time.Now(),
+	}, firestore.MergeAll)
+}
+
+// ExecuteMarkCompleteBatch marks indempotent function as complete based
+// on EventID specified in context metadata
+func ExecuteMarkCompleteBatch(ctx context.Context, bx *firestore.WriteBatch) error {
+	ref, err := GetExecuteProgressRef(ctx)
+	if err != nil {
+		return err
+	}
+	bx.Set(ref, map[string]interface{}{
+		"done":      true,
+		"updatedAt": time.Now(),
+	}, firestore.MergeAll)
+
+	return nil
+}
+
+// ExecuteMarkComplete marks indempotent function as complete based
+// on EventID specified in context metadata
+func ExecuteMarkComplete(ctx context.Context) error {
+	ref, err := GetExecuteProgressRef(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = ref.Set(ctx, map[string]interface{}{
+		"done":      true,
+		"updatedAt": time.Now(),
+	}, firestore.MergeAll)
+
+	return err
+}
+
+// GetExecuteProgressRef returns a document reference for the document tracking progress of
+// indempotent completion of this function based on EventID specified in context metadata
+func GetExecuteProgressRef(ctx context.Context) (*firestore.DocumentRef, error) {
+	meta, err := metadata.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client.Collection("user-events").Doc(meta.EventID), nil
 }

@@ -14,20 +14,20 @@ type FieldPaths struct {
 
 // StringValue is a type for parsing `string` type from Firestore Events
 type StringValue struct {
-	Value string `json:"stringValue"`
+	StringValue string `json:"stringValue"`
 }
 
 // IntegerValue is a type for parsing `integer` type from Firestore Events
 type IntegerValue struct {
-	Value int64 `json:"integerValue"`
+	IntegerValue int64 `json:"integerValue"`
 }
 
 // TimestampValue is a type for parsing `Timestamp` type from Firestore Events
 type TimestampValue struct {
-	Value time.Time `json:"timestampValue"`
+	TimestampValue time.Time `json:"timestampValue"`
 }
 
 // BooleanValue is a type for parsing `boolean` type from Firestore Events
 type BooleanValue struct {
-	Value bool `json:"booleanValue"`
+	BooleanValue bool `json:"booleanValue"`
 }
