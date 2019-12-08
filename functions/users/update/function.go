@@ -9,6 +9,7 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/makuc/a-novels-backend/pkg/gcp"
+	"github.com/makuc/a-novels-backend/pkg/idempotent"
 	"google.golang.org/api/iterator"
 )
 
@@ -37,11 +38,11 @@ type FirestoreValue struct {
 type UserProfile struct {
 	UID         gcp.StringValue `json:"uid"`
 	DisplayName gcp.StringValue `json:"displayName"`
-	Email       StringValue     `json:"email"`
+	Email       gcp.StringValue `json:"email"`
 	//EmailVerified
-	PhoneNumber StringValue    `json:"phoneNumber"`
-	PhotoURL    StringValue    `json:"photoURL"`
-	CreatedAt   TimestampValue `json:"createdAt"`
+	PhoneNumber gcp.StringValue    `json:"phoneNumber"`
+	PhotoURL    gcp.StringValue    `json:"photoURL"`
+	CreatedAt   gcp.TimestampValue `json:"createdAt"`
 }
 
 func init() {
@@ -90,26 +91,26 @@ func UserUpdate(ctx context.Context, e FirestoreEvent) error {
 	}
 
 	// Continue with execution
-	if e.OldValue.Fields.DisplayName.StringValue != e.Value.Fields.DisplayName.StringValue {
+	if e.OldValue.Fields.DisplayName.Value != e.Value.Fields.DisplayName.Value {
 		// Display name has been changed! Now do the correct adjustments!
-		err := changeNovelAuthor(ctx, e.Value.Fields.UID.StringValue, e.Value.Fields.DisplayName.StringValue)
+		err := changeNovelAuthor(ctx, e.Value.Fields.UID.Value, e.Value.Fields.DisplayName.Value)
 		if err != nil {
 			log.Printf("changeNovelsAuthor: %v", err.Error())
 			return err
 		}
 
-		err = changeReviewsAuthor(ctx, e.Value.Fields.UID.StringValue, e.Value.Fields.DisplayName.StringValue)
+		err = changeReviewsAuthor(ctx, e.Value.Fields.UID.Value, e.Value.Fields.DisplayName.Value)
 		if err != nil {
 			log.Printf("changeReviewsAuthor: %v", err.Error())
 			return err
 		}
 	}
 
-	return ExecuteMarkComplete(ctx)
+	return idempotent.ExecuteMarkComplete(ctx)
 }
 
 func changeNovelAuthor(ctx context.Context, uid string, name string) error {
-	progressRef, err := GetExecuteProgressRef(ctx)
+	progressRef, err := idempotent.GetExecuteProgressRef(ctx)
 	if err != nil {
 		return err
 	}

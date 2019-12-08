@@ -3,6 +3,9 @@ package idempotent
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -17,7 +20,7 @@ var (
 )
 
 // ExecuteWithLease tracks indempotence of the function based on the EventID specified in context metadata.
-func ExecuteWithLease(ctx context.Context, leaseSeconds int) (bool, error) {
+func ExecuteWithLease(ctx context.Context) (bool, error) {
 	proceed := true
 
 	meta, err := metadata.FromContext(ctx)
@@ -43,6 +46,16 @@ func ExecuteWithLease(ctx context.Context, leaseSeconds int) (bool, error) {
 			if val, ok := getLease.(time.Time); ok && time.Now().Before(val) {
 				return errors.New("occupied, try later")
 			}
+		}
+
+		leaseSecondsRaw, ok := os.LookupEnv("leaseSeconds")
+		if !ok {
+			leaseSecondsRaw = "60" // Default value, just in case
+			log.Print("check env: leaseSeconds, using default: 60")
+		}
+		leaseSeconds, err := strconv.ParseInt(leaseSecondsRaw, 10, 32)
+		if err != nil {
+			return err
 		}
 
 		newValue := map[string]interface{}{

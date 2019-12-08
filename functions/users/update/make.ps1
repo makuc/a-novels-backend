@@ -30,7 +30,6 @@ function build {
 }
 
 function tidy {
-    go mod init
     go mod tidy
 }
 
@@ -54,4 +53,5 @@ function deploy {
 
 # RUNS the COMMAND
 Clear-Host
+$env:GOPRIVATE="*github.com/makuc"
 &$exeFunc
