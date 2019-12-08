@@ -1,4 +1,4 @@
-package onnovelcoverupload
+package onfiledelete
 
 import (
 	"context"
@@ -35,6 +35,8 @@ type GCSEvent struct {
 
 func init() {
 	ctx := context.Background()
+	// Declare a separate err variable to avoid shadowing the client variables.
+	var err error
 
 	projectID, ok := os.LookupEnv("GPC_PROJECT")
 	if !ok {
@@ -52,10 +54,10 @@ func init() {
 	}
 
 	// Fetch the service account key JSON file contents
-	opt := option.WithCredentialsFile("firebase-adminsdk-testing-192515.json")
+	//opt := option.WithCredentialsFile("firebase-adminsdk-testing-192515.json")
 
 	// Initialize default app
-	app, err := firebase.NewApp(ctx, conf, opt)
+	app, err := firebase.NewApp(ctx, conf/*, opt*/)
 	if err != nil {
 		log.Fatalf("firebase.NewApp: %v\n", err)
 	}
@@ -65,27 +67,48 @@ func init() {
 	if err != nil {
 		log.Fatalf("app.Firestore: %v", err)
 	}
+
+	// Access storage services from the default app
+	storageClient, err := app.Storage(ctx)
+	if err != nil {
+		log.Fatalf("app.Storage: %v", err)
+	}
+
+	bucket, err = storageClient.DefaultBucket()
+	if err != nil {
+		log.Fatalf("storageClient.DefaultBucket: %v", err)
+	}
 }
 
-// OnNovelCoverUpload is a function executing upon uploading a new cover.
-// usage: when a new cover is uploaded, updates novel to match the change
-func OnNovelCoverUpload(ctx context.Context, e GCSEvent) error {
+// OnNovelCoverDelete is a function executing upon deleting cover of a novel.
+// usage: when a cover is deleted, updates novel to match the change
+func OnNovelCoverDelete(ctx context.Context, e GCSEvent) error {
 	_, err := metadata.FromContext(ctx) // Change _ => meta
 	if err != nil {
 		log.Fatalf("metadata.FromContext: %v", err)
 	}
 
-	setNovelHasCover(ctx, e.Name[7:27])
+	obj := bucket.Object(fmt.Sprintf("novels/%s/cover-full.jpg", e.Name[7:27]))
+	_, err = obj.Attrs(ctx) // _ => objAttrs
+	if err != nil {
+		if err.Error() == "storage: object doesn't exist" {
+			// This file is deleted, so we can properly remove `cover` from novel
+			setNovelNoCover(ctx, e.Name[7:27])
+			return nil
+		}
+
+		log.Fatalf("obj.Attrs: %v", err)
+	}
 
 	return nil
 }
 
-func setNovelHasCover(ctx context.Context, novelID string) {
+func setNovelNoCover(ctx context.Context, novelID string) {
 	_, err := firestoreClient.Collection("novels").Doc(novelID).Set(ctx, map[string]interface{}{
-		"cover": true,
+		"cover": false,
 	}, firestore.MergeAll)
 
 	if err != nil {
-		log.Fatalf("setNovelHasCover error: %v\n", err.Error())
+		log.Fatalf("setNovelNoCover error: %v\n", err.Error())
 	}
 }

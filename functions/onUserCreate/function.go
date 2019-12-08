@@ -1,4 +1,4 @@
-package onUserCreate
+package onusercreate
 
 import (
 	"cloud.google.com/go/firestore"
@@ -6,11 +6,13 @@ import (
 	firebase "firebase.google.com/go"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
 var client *firestore.Client
 
+// AuthEvent is payload event from Firebase
 type AuthEvent struct {
 	UID           string `json:"uid"`
 	DisplayName   string `json:"displayName"`
@@ -25,6 +27,8 @@ type AuthEvent struct {
 		LastSignInTime time.Time `json:"lastSignInTime"`
 	} `json:"metadata"`
 }
+
+// UserProfile is a payload event from Firebase
 type UserProfile struct {
 	UID           string `firestore:"uid"`
 	DisplayName   string `firestore:"displayName"`
@@ -62,7 +66,13 @@ func init() {
 	}
 }
 
+// OnUserCreate executes upon a new user being with Firebase Auth
+// It creates a copy for storing custom user info in DB.
 func OnUserCreate(ctx context.Context, e AuthEvent) error {
+	if e.DisplayName == "" {
+		e.DisplayName = e.Email[:strings.Index(e.Email, "@")]
+	}
+
 	// Create the new user document
 	_, err := client.Collection("users").Doc(e.UID).Set(ctx, UserProfile{
 		UID:           e.UID,

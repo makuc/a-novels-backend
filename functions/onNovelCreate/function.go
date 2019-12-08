@@ -14,64 +14,64 @@ var client *firestore.Client
 
 // FirestoreEvent is the payload of a Firestore event.
 type FirestoreEvent struct {
-	OldValue	FirestoreValue	`firestore:"oldValue"`
-	Value		FirestoreValue	`firestore:"value"`
+	OldValue   FirestoreValue `firestore:"oldValue"`
+	Value      FirestoreValue `firestore:"value"`
 	UpdateMask struct {
-		FieldPaths	[]string	`firestore:"fieldPaths"`
+		FieldPaths []string `firestore:"fieldPaths"`
 	} `firestore:"updateMask"`
 }
+
 // FirestoreValue holds Firestore fields.
 type FirestoreValue struct {
-	CreateTime time.Time	`firestore:"createTime"`
+	CreateTime time.Time `firestore:"createTime"`
 	// Fields is the data for this value. The type depends on the format of your
 	// database. Log the interface{} value and inspect the result to see a JSON
 	// representation of your database fields.
-	Fields		NovelPart		`firestore:"fields"`
-	Name		string		`firestore:"name"`
-	UpdateTime	time.Time	`firestore:"updateTime"`
+	Fields     NovelPart `firestore:"fields"`
+	Name       string    `firestore:"name"`
+	UpdateTime time.Time `firestore:"updateTime"`
 }
 type NovelPart struct {
-	Id			struct		{
+	Id struct {
 		StringValue string `firestore:"stringValue"`
-	}		`firestore:"id"`
-	Title		struct {
+	} `firestore:"id"`
+	Title struct {
 		StringValue string `firestore:"stringValue"`
-	}		`firestore:"title.stringValue"`
+	} `firestore:"title.stringValue"`
 }
 type Novel struct {
-	Id			string		`firestore:"id"`
-	Title		string		`firestore:"title"`
-	Author		Author		`firestore:"author"`
+	Id     string `firestore:"id"`
+	Title  string `firestore:"title"`
+	Author Author `firestore:"author"`
 	//editors
 
-	CoverURL	string		`firestore:"coverURL""`
-	Published	bool		`firestore:"published"`
+	CoverURL  string `firestore:"coverURL""`
+	Published bool   `firestore:"published"`
 
-	CreatedAt	time.Time	`firestore:"createdAt.timestampValue"`
-	UpdatedAt	time.Time	`firestore:"updatedAt.timestampValue"`
+	CreatedAt time.Time `firestore:"createdAt.timestampValue"`
+	UpdatedAt time.Time `firestore:"updatedAt.timestampValue"`
 
-	Description	string		`firestore:"description"`
-	Genres		[]Genre		`firestore:"genres"`
-	Tags		[]string	`firestore:"tags"`
+	Description string   `firestore:"description"`
+	Genres      []Genre  `firestore:"genres"`
+	Tags        []string `firestore:"tags"`
 
-	NFavorites	int64		`firestore:"nFavorites"`
+	NFavorites int64 `firestore:"nFavorites"`
 
-	NRatings	int64		`firestore:"nRatings"`
-	StoryRating	int64		`firestore:"storyRating"`
-	StyleRating	int64		`firestore:"styleRating"`
-	CharsRating	int64		`firestore:"charsRating"`
-	WorldRating	int64		`firestore:"worldRating"`
-	GrammRating	int64		`firestore:"grammRating"`
+	NRatings    int64 `firestore:"nRatings"`
+	StoryRating int64 `firestore:"storyRating"`
+	StyleRating int64 `firestore:"styleRating"`
+	CharsRating int64 `firestore:"charsRating"`
+	WorldRating int64 `firestore:"worldRating"`
+	GrammRating int64 `firestore:"grammRating"`
 }
 type Author struct {
-	Uid			string		`firestore:"uid"`
-	DisplayName	string		`firestore:"displayName"`
+	Uid         string `firestore:"uid"`
+	DisplayName string `firestore:"displayName"`
 }
 type Genre struct {
-	Name		string		`firestore:"name"`
-	Description	string		`firestore:"description"`
+	Name        string `firestore:"name"`
+	Description string `firestore:"description"`
 }
-
 
 func init() {
 	ctx := context.Background()
@@ -98,6 +98,7 @@ func init() {
 	}
 }
 
+// OnNovelCreate executes when a document in `novels` collection is created
 func OnNovelCreate(ctx context.Context, e FirestoreEvent) error {
 	meta, err := metadata.FromContext(ctx)
 	if err != nil {
