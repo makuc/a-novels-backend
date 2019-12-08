@@ -7,8 +7,8 @@ param(
 
 # BEGIN Config
 
-$functionName = "user-update"
-$entryPoint = "UserUpdate"
+$functionName = "on-user-update"
+$entryPoint = "OnUserUpdate"
 $projectId = "testing-192515"
 $triggerEvent = "providers/cloud.firestore/eventTypes/document.update"
 $triggerResource = "projects/$projectId/databases/(default)/documents/users/{uid}"

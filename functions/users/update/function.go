@@ -77,8 +77,8 @@ func init() {
 	}
 }
 
-// UserUpdate executes when relevant entry in User collection is UPDATED
-func UserUpdate(ctx context.Context, e FirestoreEvent) error {
+// OnUserUpdate executes when relevant entry in User collection is UPDATED
+func OnUserUpdate(ctx context.Context, e FirestoreEvent) error {
 	// log.Printf("Function triggered by change to: %v", meta.Resource)
 
 	proceed, err := idempotent.ExecuteWithLease(ctx)
