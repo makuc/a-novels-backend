@@ -9,7 +9,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
-	github.com/makuc/a-novels-backend v0.0.0-20191208194307-255e238337e1
+	github.com/makuc/a-novels-backend v0.0.0-20191208200741-c57709aa44a9
 	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/exp v0.0.0-20191129062945-2f5052295587 // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect

@@ -12,7 +12,7 @@ $entryPoint = "UserUpdate"
 $projectId = "testing-192515"
 $triggerEvent = "providers/cloud.firestore/eventTypes/document.update"
 $triggerResource = "projects/$projectId/databases/(default)/documents/users/{uid}"
-$envVariables = "worker_id=full-admin-rights,leaseSeconds=60"
+$envVariables = "worker_id=full-admin-rights,leaseSeconds=60,GONOPROXY=*github.com/makuc"
 
 # END Config
 
@@ -31,6 +31,10 @@ function build {
 
 function tidy {
     go mod tidy
+}
+
+function upgrade {
+    go get -u
 }
 
 function test {
@@ -53,5 +57,5 @@ function deploy {
 
 # RUNS the COMMAND
 Clear-Host
-$env:GOPRIVATE="*github.com/makuc"
+$env:GONOPROXY="*github.com/makuc"
 &$exeFunc
