@@ -1,4 +1,4 @@
-package onfiledelete
+package deleted
 
 import (
 	"context"
@@ -10,17 +10,14 @@ import (
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/functions/metadata"
 	"cloud.google.com/go/storage"
-	vision "cloud.google.com/go/vision/apiv1"
 	firebase "firebase.google.com/go"
-	"google.golang.org/api/option"
+	"github.com/makuc/a-novels-backend/pkg/idempotent"
 )
 
 var (
 	app             *firebase.App
 	firestoreClient *firestore.Client
 	bucket          *storage.BucketHandle
-
-	visionClient *vision.ImageAnnotatorClient
 )
 
 // GCSEvent is the payload of a GCS event.
@@ -57,7 +54,7 @@ func init() {
 	//opt := option.WithCredentialsFile("firebase-adminsdk-testing-192515.json")
 
 	// Initialize default app
-	app, err := firebase.NewApp(ctx, conf/*, opt*/)
+	app, err := firebase.NewApp(ctx, conf /*, opt*/)
 	if err != nil {
 		log.Fatalf("firebase.NewApp: %v\n", err)
 	}
@@ -78,12 +75,25 @@ func init() {
 	if err != nil {
 		log.Fatalf("storageClient.DefaultBucket: %v", err)
 	}
+
+	idempotent.Client = firestoreClient
 }
 
-// OnNovelCoverDelete is a function executing upon deleting cover of a novel.
-// usage: when a cover is deleted, updates novel to match the change
-func OnNovelCoverDelete(ctx context.Context, e GCSEvent) error {
-	_, err := metadata.FromContext(ctx) // Change _ => meta
+// OnFileDeleted executes when a file is deleted from the storage bucket.
+// Performs all the necessary corrections (in DB) if necessary.
+func OnFileDeleted(ctx context.Context, e GCSEvent) error {
+
+	log.Printf("Resource state: %v", e.ResourceState) // == not-found ?? Shorter for deleted objects...
+
+	proceed, err := idempotent.ExecuteWithLease(ctx)
+	if err != nil {
+		return err
+	}
+	if !proceed {
+		return nil // EventID was already processed
+	}
+
+	_, err = metadata.FromContext(ctx) // Change _ => meta
 	if err != nil {
 		log.Fatalf("metadata.FromContext: %v", err)
 	}

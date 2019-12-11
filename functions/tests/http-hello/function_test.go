@@ -1,4 +1,4 @@
-package nodbexp
+package httphello
 
 import (
 	"io/ioutil"
@@ -10,10 +10,10 @@ import (
 const url = "/"
 const status = http.StatusOK
 const body = string("Hello World!\n")
-func respBodyConversion(source []byte)(string) {
+
+func respBodyConversion(source []byte) string {
 	return string(source)
 }
-
 
 // Should be left as is?
 func TestBrezBaze(t *testing.T) {

@@ -50,4 +50,5 @@ function deploy {
 
 # RUNS the COMMAND
 Clear-Host
+$env:GONOPROXY="*github.com/makuc"
 &$exeFunc

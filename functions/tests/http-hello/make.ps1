@@ -7,9 +7,8 @@ param(
 
 # BEGIN Config
 
-$functionName = "testiram"
-$entryPoint = "BrezBaze"
-$projectId = "testing-192515"
+$functionName = "http-hello"
+$entryPoint = "Function"
 $envVariables = "NAME=none"
 
 # END Config

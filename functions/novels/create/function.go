@@ -1,4 +1,4 @@
-package onnovelcreate
+package create
 
 import (
 	"cloud.google.com/go/firestore"
@@ -32,7 +32,7 @@ type FirestoreValue struct {
 	UpdateTime time.Time `firestore:"updateTime"`
 }
 type NovelPart struct {
-	Id struct {
+	ID struct {
 		StringValue string `firestore:"stringValue"`
 	} `firestore:"id"`
 	Title struct {

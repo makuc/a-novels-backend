@@ -1,4 +1,4 @@
-module github.com/makuc/a-novels-backend/functions/on-novel-create
+module github.com/makuc/a-novels-backend/functions/novels/create
 
 go 1.12
 
